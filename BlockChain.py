@@ -5,7 +5,7 @@ import json
 from ecdsa import SigningKey, VerifyingKey, SECP256k1, keys
 
 class Transaction:
-    def __init__(self, fromAdd, toAdd, amount):
+    def __init__(self, fromAdd, toAdd : VerifyingKey, amount):
         self.fromAdd = fromAdd
         self.toAdd = toAdd
         self.amount = amount
@@ -37,57 +37,48 @@ class Transaction:
 class Block:
     fm = '%d/%m/%Y'
     def __init__(self, timestamp, transaction:Transaction, previousHash = ""):
+        '''
+        Make a block
+        '''
         self.timestamp = timestamp.strftime(Block.fm)
-        # self.ty = type(transaction)
-        # if (self.ty == dict):
-        #     for k,v in transaction.items():
-        #         self.key = k
-        #         self.val = v
-        #     self.transaction = k+':'+str(v)
-        # else: 
-        #     self.transaction = transaction
         self.transaction = transaction
         self.previousHash = previousHash
         self.nonce = int(0)
+        self.toAdress = []
+        self.fromAdress = []
+        self.amount = []
+        trans = self.transaction
+        if trans != 'GenesisBlock':
+            for i in trans:
+                self.toAdress.append(i.toAdd.to_string().hex())
+                if type(i.fromAdd) != int:
+                    self.fromAdress.append(i.fromAdd.to_string().hex())
+                self.amount.append(str(i.amount))
         self.hash = self.calHash()
-
-        # self.fromAdd = 
-        # self.toAdd = 
-        # self.amount = 
-        
-
+      
     def calHash(self):
-        # ty = type(self.transaction)
-        # if (ty == dict):
-        #     for k,v in self.transaction.items():
-        #         self.key = k
-        #         self.val = v
-        #     self.transaction = k+':'+str(v)
-        return sha256(str(self.previousHash + self.timestamp + str(self.nonce)).encode('utf-8')).hexdigest()
+        
+        return sha256(str(self.previousHash + self.timestamp + str(self.nonce) + ', '.join(self.toAdress) + ', '.join(self.toAdress) + ', '.join(self.amount)).encode('utf-8')).hexdigest()
 
     def __str__(self) -> dict:
-        # if (self.ty == dict):
-        #     return {
-        #         'index' : self.index,
-        #         'timestamp' : self.timestamp,
-        #         self.key : self.val,
-        #         'previousHash' : self.previousHash,
-        #         'hash' : self.hash
-        #     }
-        # else:
-        # trans = self.transaction
-        # fa = trans.fromAdd
-        # ta = trans.toAdd
+        '''
+        print Block
+        '''
         return {
             'timestamp' : self.timestamp,
-            # "fromAddress" : self.fromAdd,
-            # "toAddress" : self.toAdd,
-            # "amount" : self.amount,
             'previousHash' : self.previousHash,
-            'hash' : self.hash
+            'hash' : self.hash,
+            'nonce': self.nonce,
+            'FromAddress' : ', '.join(self.fromAdress),
+            'ToAddress' : ', '.join(self.toAdress),
+            'Amount' : ', '.join(self.amount)
         }
 
     def mineBlock(self, difficulty):
+        '''
+        mine Block with a difficulty
+            ex: difficulty = 3 -> block's hash: 000+hash
+        '''
 
         while(self.hash[:difficulty] != ''.join(['0' for i in range(difficulty)])):
             self.nonce += 1
@@ -96,48 +87,72 @@ class Block:
         print("Block mined: " + self.hash)
 
     def hasValidTrans(self):
+        '''
+        Confirm the transaction
+        '''
         trans = self.transaction
         for tran in trans:
             if (not tran.isValid()):
                 return False
 
         return True
+
 class BlockChain:
-    def __init__(self):
-        self.chain = [self.genesisBlock()]
-        self.difficulty = 3
-        self.pendingTrans = []
+    '''
+    Make a Chain of Block with difficulty of hash
+    '''
+    def __init__(self, difficulty):
+        self.chain = [self.genesisBlock()]      # Make a Chain with the first block is Genesis Block
+        self.difficulty = difficulty                     
+        self.pendingTrans = []                  # Make a list of pending transaction
         self.miningReward = 100
 
     def genesisBlock(self):
+        '''
+        make The First Block: The Beginning of the Chain
+        '''
         return Block(datetime(2022, 8, 1),"GenesisBlock","0")
 
     def getLastesBlock(self):
+        '''
+        get The Last Block: The End of the Chain
+        '''
         return self.chain[len(self.chain)-1]
 
     def minePendingTrans(self, miningRewardAdd):
-        rewardTx = Transaction(NULL, miningRewardAdd, self.miningReward)
-        self.pendingTrans.append(rewardTx)
+        '''
+        add a mined Block to a pending chain for a pending Transaction
+        '''
+        rewardTx = Transaction(NULL, miningRewardAdd, self.miningReward)    #This transaction will send reward to the miner
+        self.pendingTrans.append(rewardTx)                                  #Send this transaction to pending chain
 
-        block = Block(datetime.now(), self.pendingTrans,self.getLastesBlock().hash)
+        block = Block(datetime.now(), self.pendingTrans,self.getLastesBlock().hash)     # Make a block consist of the made time, list of pending Trans and the last block's hash
         block.mineBlock(self.difficulty)
 
         print('Block successfully mined!')
-        self.chain.append(block)
+        self.chain.append(block)            # Add Block to Chain
 
-        self.pendingTrans = []
+        self.pendingTrans = []              # Empty pending List
 
     def addTrans(self,trans):
+        '''
+        Add Transaction to pending list wait for a block
+        '''
 
-        if (not trans.fromAdd or not trans.toAdd):
+        if (not trans.fromAdd or not trans.toAdd):              # Check for address
             raise ValueError('Transaction must include from and to address')
 
-        if (not trans.isValid()):
+        if (not trans.isValid()):                               # Check for Signature
             raise ValueError('Cant\' add invalid transction to chain')
 
-        self.pendingTrans.append(trans)
+        self.pendingTrans.append(trans)                         # Add transaction to a pending list
 
     def getBalance(self, address):
+        '''
+        Get Balance of a Address
+        Because there is no saved file or database, we get balance by calculating how many Coins get in and out of the address
+        '''
+
         balance = 0
         
         for block in self.chain:
@@ -152,11 +167,20 @@ class BlockChain:
         return balance
 
     def printChain(self):
+        '''
+        Show all the block
+        '''
         for i in range(len(self.chain)):
-            # if i == 0: continue
+            if i == 0: continue
             print(json.dumps(self.chain[i].__str__(),separators=('',':'),indent=2))
 
     def isChainValid(self):
+        '''
+        Check the Chain if:
+            There is invalid Transaction
+            There is Wrong Hash of the current Block
+            There is Wrong Hash of the previous Block
+        '''
         for i in range(len(self.chain)):
             if i == 0: continue
             CurBlock = self.chain[i]
