@@ -1,9 +1,9 @@
-from ecdsa import SigningKey, VerifyingKey, SECP256k1
+from ecdsa import SigningKey, SECP256k1
 
-sk = SigningKey.generate(curve=SECP256k1)
-vk = sk.verifying_key
+privateKey = SigningKey.generate(curve=SECP256k1)
+publicKey = privateKey.verifying_key
 
-print('Private key: ', sk.to_string().hex())
-print('Public key: ', vk.to_string().hex())
+print('Private key: ', privateKey.to_string().hex())
+print('Public key: ', publicKey.to_string().hex())
 
 # Tạo Key

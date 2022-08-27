@@ -5,32 +5,45 @@ import json
 from ecdsa import SigningKey, VerifyingKey, SECP256k1, keys
 
 class Transaction:
+    '''
+    Make a Transaction
+    '''
     def __init__(self, fromAdd, toAdd : VerifyingKey, amount):
         self.fromAdd = fromAdd
         self.toAdd = toAdd
         self.amount = amount
 
     def calHash(self):
+        '''
+        Make hash for signature
+        Hash make up of FromAddress, ToAddress, Amount
+        '''
         if type(self.toAdd) == str:
             return sha256(str(self.fromAdd.to_string().hex() + self.toAdd + str(self.amount)).encode('utf-8')).hexdigest()
         return sha256(str(self.fromAdd.to_string().hex() + self.toAdd.to_string().hex() + str(self.amount)).encode('utf-8')).hexdigest()
 
     def signTrans(self, sk):
-        if (sk.verifying_key != self.fromAdd):
+        '''
+        Sign the Transaction to authenticate the owner of the wallet/sender
+        '''
+        if (sk.verifying_key != self.fromAdd):          #Verify owner/sender PublicKey
             raise ValueError('You can\'t sign transaction for other wallet!')
 
-        hashTrans = self.calHash()
-        sig = SigningKey.sign(sk,hashTrans.encode('utf-8'))
+        hashTrans = self.calHash()          # Make hash for signing
+        sig = SigningKey.sign(sk,hashTrans.encode('utf-8'))     #Signing Transaction
         self.signature = sig
 
     def isValid(self):
-        if(self.fromAdd == NULL): return True
-        if(not self.signature or len(self.signature) == 0):
+        '''
+        Validate Transaction
+        '''
+        if(self.fromAdd == NULL): return True           #Validate for the mining reward
+        if(not self.signature or len(self.signature) == 0):         #Check for Signature
             raise ValueError('No signature in this transaction')
 
-        pubkey = VerifyingKey.from_string(self.fromAdd.to_string(), SECP256k1)
+        pubkey = VerifyingKey.from_string(self.fromAdd.to_string(), SECP256k1)  #Extract PublicKey
         try:
-            return pubkey.verify(self.signature, self.calHash().encode())
+            return pubkey.verify(self.signature, self.calHash().encode())       #Verifying signature
         except: 
             return False
 
@@ -57,8 +70,10 @@ class Block:
         self.hash = self.calHash()
       
     def calHash(self):
-        
-        return sha256(str(self.previousHash + self.timestamp + str(self.nonce) + ', '.join(self.toAdress) + ', '.join(self.toAdress) + ', '.join(self.amount)).encode('utf-8')).hexdigest()
+        '''
+        Make block's hash
+        '''
+        return sha256((self.previousHash + self.timestamp + str(self.nonce) + ', '.join(self.toAdress) + ', '.join(self.toAdress) + ', '.join(self.amount)).encode()).hexdigest()
 
     def __str__(self) -> dict:
         '''
@@ -80,7 +95,8 @@ class Block:
             ex: difficulty = 3 -> block's hash: 000+hash
         '''
 
-        while(self.hash[:difficulty] != ''.join(['0' for i in range(difficulty)])):
+        while(self.hash[:difficulty] != \
+            ''.join(['0' for i in range(difficulty)])):
             self.nonce += 1
             self.hash = self.calHash()
 
@@ -113,7 +129,7 @@ class BlockChain:
         '''
         return Block(datetime(2022, 8, 1),"GenesisBlock","0")
 
-    def getLastesBlock(self):
+    def getLastBlock(self):
         '''
         get The Last Block: The End of the Chain
         '''
@@ -126,7 +142,7 @@ class BlockChain:
         rewardTx = Transaction(NULL, miningRewardAdd, self.miningReward)    #This transaction will send reward to the miner
         self.pendingTrans.append(rewardTx)                                  #Send this transaction to pending chain
 
-        block = Block(datetime.now(), self.pendingTrans,self.getLastesBlock().hash)     # Make a block consist of the made time, list of pending Trans and the last block's hash
+        block = Block(datetime.now(), self.pendingTrans,self.getLastBlock().hash)     # Make a block consist of the made time, list of pending Trans and the last block's hash
         block.mineBlock(self.difficulty)
 
         print('Block successfully mined!')

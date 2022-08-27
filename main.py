@@ -50,7 +50,7 @@ def main():
     p2key = privateKey('7fb4d4c835e9fe9a8a4105fc750649fcfb1c38e75d282d94becdf40a66ae77a9')
     p2Wallet = publicKey(p2key)
 
-    send(myWalletAddress, p2key, 10, myKey)
+    send(myWalletAddress, p2Wallet, 10, myKey)
     mining(myWalletAddress)
     getBalance(myWalletAddress)
     print('------')
@@ -63,7 +63,7 @@ def main():
     getBalance(myWalletAddress)
 
 
-    # Coin.chain[1].transaction[0].amount = 5               #Test 
+    # Coin.chain[1].transaction[0].amount = 5000               #Test 
 
     print('Is chain valid?', Coin.isChainValid())           #Check valid of chain
     
