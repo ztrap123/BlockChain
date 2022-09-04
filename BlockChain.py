@@ -73,7 +73,7 @@ class Block:
         '''
         Make block's hash
         '''
-        return sha256((self.previousHash + self.timestamp + str(self.nonce) + ', '.join(self.toAdress) + ', '.join(self.toAdress) + ', '.join(self.amount)).encode()).hexdigest()
+        return sha256((self.previousHash + self.timestamp + str(self.nonce) + ', '.join(self.fromAdress) + ', '.join(self.toAdress) + ', '.join(self.amount)).encode()).hexdigest()
 
     def __str__(self) -> dict:
         '''

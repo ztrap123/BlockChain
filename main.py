@@ -41,13 +41,13 @@ def main():
 
     Coin = BlockChain(4)             #Generate the chain
 
-    myKey = privateKey('899cad35b4857b41b3e439d9b86d6e3654193859de9e19d5590ea85343f608ae')
+    myKey = privateKey('0a7467a387acfbfac6c1697bcd5adf303eb290fc26da7ec08851b346cb8a9daa')
     myWalletAddress = publicKey(myKey)
 
-    p1key = privateKey('ed1b8435585667c3ee34807d3a9a3a3e074bf20f86a6aad82427daa2f3690805')
+    p1key = privateKey('b8f1923e48341ef53bd43b0a5b0eec544f2b4d968f9b193a92fc1c4a16656289')
     p1Wallet = publicKey(p1key)
 
-    p2key = privateKey('7fb4d4c835e9fe9a8a4105fc750649fcfb1c38e75d282d94becdf40a66ae77a9')
+    p2key = privateKey('e4ded3b4170609dace2d8e5e6c2af8d4a412a5f98672a2cc1de64ad7eec089fa')
     p2Wallet = publicKey(p2key)
 
     send(myWalletAddress, p2Wallet, 10, myKey)
@@ -63,9 +63,13 @@ def main():
     getBalance(myWalletAddress)
 
 
-    # Coin.chain[1].transaction[0].amount = 5000               #Test 
+    Coin.chain[1].transaction[0].amount = 5000               #Test 
 
     print('Is chain valid?', Coin.isChainValid())           #Check valid of chain
+    
+    send(myWalletAddress, p2Wallet, 10, myKey)
+    mining(myWalletAddress)
+    getBalance(myWalletAddress)
     
     Coin.printChain()         #Show all block
 
